@@ -15,7 +15,7 @@ namespace concurrentcpp {
 template <typename T>
 class BlockingQueue {
 public:
-    BlockingQueue(std::size_t size): max_size_(size) {
+    explicit BlockingQueue(std::size_t size): max_size_(size) {
     }
 
     bool put(const T& v, const std::chrono::milliseconds& timeout = std::chrono::milliseconds{0}) {
@@ -68,6 +68,11 @@ public:
         return q_.size();
     }
 
+    BlockingQueue(const BlockingQueue&) = delete;
+    BlockingQueue& operator=(const BlockingQueue&) = delete;
+    BlockingQueue(BlockingQueue&&) = delete;
+    BlockingQueue& operator=(BlockingQueue&&) = delete;
+
 private:
     template <typename C>
     bool do_put(C& callback, const std::chrono::milliseconds& timeout) {
@@ -102,7 +107,5 @@ private:
 };
 
 } // concurrentcpp
-
-
 
 #endif //SPLUNK_HEC_CLIENT_CPP_BLOCKING_QUEUE_H

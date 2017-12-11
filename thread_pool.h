@@ -15,14 +15,15 @@
 #include <future>
 #include <functional>
 
-
 namespace concurrentcpp {
 
 class ThreadPool {
 public:
+    // param size: number of threads
+    // param timeout: submit timeout
     explicit ThreadPool(std::size_t size = std::max(std::thread::hardware_concurrency(), 2u),
-                        const std::chrono::milliseconds& submit_timeout = std::chrono::milliseconds{1000})
-            : tasks_(2 * size) {
+                        const std::chrono::milliseconds& timeout = std::chrono::milliseconds{1000})
+            : tasks_(2 * size), timeout_(timeout) {
         for (std::size_t i = 0; i < size; i++) {
             workers_.emplace_back(std::thread(std::bind(&ThreadPool::_wait_for_tasks, this)));
         }
@@ -45,7 +46,7 @@ public:
         );
 
         std::future<return_type> res = task->get_future();
-        bool success = tasks_.put([task](){(*task)();}, timedout_);
+        bool success = tasks_.put([task](){(*task)();}, timeout_);
         if (!success) {
             throw TimeoutException("timed out when submitting task");
         }
@@ -61,7 +62,7 @@ private:
     void _wait_for_tasks() {
         while (!stop_.load()) {
             std::function<void()> task;
-            bool got_task = tasks_.get(task, timedout_);
+            bool got_task = tasks_.get(task, timeout_);
             if (got_task && task) {
                 task();
             }
@@ -70,7 +71,7 @@ private:
 
 private:
     std::atomic_bool stop_;
-    std::chrono::milliseconds timedout_;
+    std::chrono::milliseconds timeout_;
     std::vector<std::thread> workers_;
     BlockingQueue<std::function<void()>> tasks_;
 };
