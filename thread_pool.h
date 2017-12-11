@@ -60,9 +60,15 @@ public:
 
 private:
     void _wait_for_tasks() {
+        // make sure tasks_.get() doesn't block
+        auto timeout(timeout_);
+        if (timeout.count() == 0) {
+            timeout = std::chrono::milliseconds{1000};
+        }
+
         while (!stop_.load()) {
             std::function<void()> task;
-            bool got_task = tasks_.get(task, timeout_);
+            bool got_task = tasks_.get(task, timeout);
             if (got_task && task) {
                 task();
             }
