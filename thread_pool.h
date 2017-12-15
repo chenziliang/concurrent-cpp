@@ -23,7 +23,7 @@ public:
     // param timeout: submit timeout
     explicit ThreadPool(std::size_t size = std::max(std::thread::hardware_concurrency(), 2u),
                         const std::chrono::milliseconds& timeout = std::chrono::milliseconds{1000})
-            : tasks_(2 * size), timeout_(timeout) {
+            : tasks_(2 * size), timeout_(timeout), stop_(false) {
         for (std::size_t i = 0; i < size; i++) {
             workers_.emplace_back(std::thread(std::bind(&ThreadPool::_wait_for_tasks, this)));
         }
@@ -76,10 +76,10 @@ private:
     }
 
 private:
-    std::atomic_bool stop_;
     std::chrono::milliseconds timeout_;
     std::vector<std::thread> workers_;
     BlockingQueue<std::function<void()>> tasks_;
+    std::atomic_bool stop_;
 };
 
 } // namespace concurrentcpp
